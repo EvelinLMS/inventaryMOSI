@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventario Pro - Regiones GT</title>
+    <title>Inventario Consolidado - Guatemala</title>
     
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
         :root {
-            --primary: #0284c7; --success: #16a34a; --danger: #dc2626;
-            --bg: #f8fafc; --dark: #0f172a; --accent: #4f46e5;
+            --primary: #0284c7; --success: #16a34a; --bg: #f8fafc; --dark: #0f172a; --accent: #4f46e5;
         }
 
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-top: 60px; }
@@ -44,7 +43,7 @@
         label { display: block; font-size: 0.75rem; font-weight: 700; margin-top: 15px; color: #64748b; text-transform: uppercase; }
         input, select { width: 100%; padding: 12px; margin: 5px 0 10px 0; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
         
-        input[readonly] { background-color: #f1f5f9; cursor: not-allowed; color: var(--primary); font-weight: bold; }
+        input[readonly] { background-color: #f1f5f9; color: var(--primary); font-weight: bold; }
 
         .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; margin-top: 10px; color: white; transition: 0.2s; }
         .btn-qr { background: var(--primary); }
@@ -53,6 +52,9 @@
         .btn-excel { background: var(--success); }
 
         #reader { width: 100% !important; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 10px; }
+        
+        .counter-box { text-align: center; margin-bottom: 20px; }
+        .counter-box b { font-size: 2rem; color: var(--primary); }
     </style>
 </head>
 <body>
@@ -63,114 +65,107 @@
 
     <nav>
         <button onclick="showPage('inicio')" id="tab-inicio">Inicio</button>
-        <button onclick="showPage('opcionA')" id="tab-opcionA">Escáner QR</button>
+        <button onclick="showPage('opcionA')" id="tab-opcionA">QR</button>
         <button onclick="showPage('opcionB')" id="tab-opcionB">Manual</button>
-        <button onclick="showPage('historial')" id="tab-historial">Ver Datos</button>
+        <button onclick="showPage('historial')" id="tab-historial">Base de Datos</button>
     </nav>
 
     <div id="inicio" class="page active">
         <div class="card">
-            <h2>Configuración</h2>
+            <h2>Configuración del Técnico</h2>
             <label>Nombre del Instalador:</label>
-            <input type="text" id="inputInstalador" placeholder="Nombre completo..." oninput="updateInstalador()">
-            <p style="color: #16a34a; font-size: 0.8rem; font-weight: bold;">✅ BASE DE DATOS LOCAL ACTIVA</p>
+            <input type="text" id="inputInstalador" placeholder="Escriba su nombre..." oninput="updateInstalador()">
+            <div style="background: #f0fdf4; padding: 15px; border-radius: 10px; border: 1px solid #bbf7d0; margin-top: 20px;">
+                <p style="color: #16a34a; margin: 0; font-size: 0.9rem;">
+                    <strong>💾 Memoria Unificada:</strong> Todos los registros se guardan en este dispositivo y se exportan en un solo archivo Excel consolidado.
+                </p>
+            </div>
         </div>
     </div>
 
     <div id="opcionA" class="page">
         <div class="card">
-            <h2>📷 Registro QR</h2>
+            <h2>📷 Escáner de Equipos</h2>
             <div id="reader"></div>
             <button class="btn btn-cam" id="btnCam" onclick="startCamera()">Activar Cámara</button>
-            <label>No. de Serie:</label>
+            <label>Serie:</label>
             <input type="text" id="qr_no" readonly>
             <label>Departamento:</label>
             <select id="qr_dep" onchange="autoReg('qr')"><option value="">Seleccione...</option></select>
-            <label>Región (Auto):</label>
+            <label>Región:</label>
             <input type="text" id="qr_reg" readonly>
-            <label>Clínica / Hospital:</label>
+            <label>Unidad Médica:</label>
             <input type="text" id="qr_cli">
-            <label>Contacto:</label>
+            <label>Nombre Contacto:</label>
             <input type="text" id="qr_con">
-            <button class="btn btn-qr" onclick="saveData('QR')">Guardar Registro</button>
+            <button class="btn btn-qr" onclick="saveData('QR')">Guardar en Base de Datos</button>
         </div>
     </div>
 
     <div id="opcionB" class="page">
         <div class="card">
-            <h2>✍️ Registro Manual</h2>
-            <label>Equipo:</label>
+            <h2>✍️ Ingreso Manual</h2>
+            <label>Tipo de Equipo:</label>
             <select id="man_eq">
                 <option value="">-- Seleccionar --</option>
                 <option>Computadora</option><option>Monitor</option><option>Teclado</option>
             </select>
-            <label>No. de Serie:</label>
+            <label>Serie:</label>
             <input type="text" id="man_no">
             <label>Departamento:</label>
             <select id="man_dep" onchange="autoReg('man')"><option value="">Seleccione...</option></select>
-            <label>Región (Auto):</label>
+            <label>Región:</label>
             <input type="text" id="man_reg" readonly>
-            <label>Clínica / Hospital:</label>
+            <label>Unidad Médica:</label>
             <input type="text" id="man_cli">
-            <label>Contacto:</label>
+            <label>Nombre Contacto:</label>
             <input type="text" id="man_con">
-            <button class="btn btn-manual" onclick="saveData('Manual')">Guardar Registro</button>
+            <button class="btn btn-manual" onclick="saveData('Manual')">Guardar en Base de Datos</button>
         </div>
     </div>
 
     <div id="historial" class="page">
         <div class="card">
-            <h2>📋 Registros en Memoria</h2>
-            <p>Conteo actual: <b id="contador">0</b></p>
-            <button class="btn btn-excel" onclick="exportExcel()">📊 Exportar a Excel</button>
-            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-            <p style="color: #64748b; font-size: 0.75rem;">Los registros se almacenan permanentemente en este dispositivo.</p>
+            <h2>📋 Base de Datos Acumulada</h2>
+            <div class="counter-box">
+                <p>Total de registros guardados:</p>
+                <b id="contador">0</b>
+            </div>
+            <button class="btn btn-excel" onclick="exportExcel()">📊 Descargar Excel Unificado</button>
+            <p style="color: #64748b; font-size: 0.75rem; text-align: center; margin-top: 20px;">
+                Nota: El archivo contendrá todos los registros capturados desde el inicio.
+            </p>
         </div>
     </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('inventario_permanente')) || []; 
+    // Se carga TODO lo guardado anteriormente al iniciar
+    let db = JSON.parse(localStorage.getItem('inventario_master_db')) || []; 
     let scanner = null;
 
-    // NUEVA ESTRUCTURA DE REGIONES SOLICITADA
     const geoData = {
         "Guatemala": "Región I / Metropolitana",
-        "Alta Verapaz": "Región II / Norte",
-        "Baja Verapaz": "Región II / Norte",
-        "Chiquimula": "Región III / Nororiente",
-        "El Progreso": "Región III / Nororiente",
-        "Izabal": "Región III / Nororiente",
-        "Zacapa": "Región III / Nororiente",
-        "Jutiapa": "Región IV / Suroriente",
-        "Jalapa": "Región IV / Suroriente",
-        "Santa Rosa": "Región IV / Suroriente",
-        "Chimaltenango": "Región V / Central",
-        "Escuintla": "Región V / Central",
-        "Sacatepéquez": "Región V / Central",
-        "Quetzaltenango": "Región VI / Suroccidente",
-        "Retalhuleu": "Región VI / Suroccidente",
-        "San Marcos": "Región VI / Suroccidente",
-        "Suchitepéquez": "Región VI / Suroccidente",
-        "Sololá": "Región VI / Suroccidente",
-        "Totonicapán": "Región VI / Suroccidente",
-        "Huehuetenango": "Región VII / Noroccidente",
-        "Quiché": "Región VII / Noroccidente",
+        "Alta Verapaz": "Región II / Norte", "Baja Verapaz": "Región II / Norte",
+        "Chiquimula": "Región III / Nororiente", "El Progreso": "Región III / Nororiente", "Izabal": "Región III / Nororiente", "Zacapa": "Región III / Nororiente",
+        "Jutiapa": "Región IV / Suroriente", "Jalapa": "Región IV / Suroriente", "Santa Rosa": "Región IV / Suroriente",
+        "Chimaltenango": "Región V / Central", "Escuintla": "Región V / Central", "Sacatepéquez": "Región V / Central",
+        "Quetzaltenango": "Región VI / Suroccidente", "Retalhuleu": "Región VI / Suroccidente", "San Marcos": "Región VI / Suroccidente", "Suchitepéquez": "Región VI / Suroccidente", "Sololá": "Región VI / Suroccidente", "Totonicapán": "Región VI / Suroccidente",
+        "Huehuetenango": "Región VII / Noroccidente", "Quiché": "Región VII / Noroccidente",
         "Petén": "Región VIII / Petén"
     };
 
     window.onload = () => {
         const selects = [document.getElementById('qr_dep'), document.getElementById('man_dep')];
-        const depsSorted = Object.keys(geoData).sort();
-        
-        selects.forEach(sel => {
-            depsSorted.forEach(dep => {
+        Object.keys(geoData).sort().forEach(dep => {
+            selects.forEach(sel => {
                 let opt = document.createElement('option');
                 opt.value = dep; opt.innerHTML = dep;
                 sel.appendChild(opt);
             });
         });
 
-        const savedUser = localStorage.getItem('instalador_fijo');
+        // Cargar instalador guardado
+        const savedUser = localStorage.getItem('instalador_pref');
         if(savedUser) {
             document.getElementById('inputInstalador').value = savedUser;
             updateInstalador();
@@ -186,7 +181,7 @@
     function updateInstalador() {
         const val = document.getElementById('inputInstalador').value;
         document.getElementById('displayInstalador').innerText = val.toUpperCase() || "NO ASIGNADO";
-        localStorage.setItem('instalador_fijo', val);
+        localStorage.setItem('instalador_pref', val);
     }
 
     function showPage(id) {
@@ -207,7 +202,7 @@
 
     function saveData(type) {
         const user = document.getElementById('inputInstalador').value.trim();
-        if (!user) return alert("❌ Ingrese nombre del instalador.");
+        if (!user) return alert("❌ Ingrese su nombre.");
 
         let prefix = type === 'QR' ? 'qr' : 'man';
         const data = {
@@ -216,41 +211,48 @@
             reg: document.getElementById(prefix + '_reg').value,
             cli: document.getElementById(prefix + '_cli').value,
             con: document.getElementById(prefix + '_con').value,
-            eq: type === 'Manual' ? document.getElementById('man_eq').value : 'ESCANEADO QR'
+            eq: type === 'Manual' ? document.getElementById('man_eq').value : 'EQUIPO QR'
         };
 
-        if (Object.values(data).some(v => v.trim() === "")) return alert("❌ Todos los campos son obligatorios.");
-        if (db.some(r => r["SERIE"] === data.serie)) return alert("⚠️ Ya existe esta serie.");
+        if (Object.values(data).some(v => v.trim() === "")) return alert("❌ Complete todos los campos.");
+        if (db.some(r => r["SERIE"] === data.serie)) return alert("⚠️ Esta serie ya fue registrada.");
 
+        // Se agrega a la lista acumulativa
         db.push({
-            "SERIE": data.serie,
+            "FECHA": new Date().toLocaleString(),
+            "INSTALADOR": user,
             "EQUIPO": data.eq,
+            "SERIE": data.serie,
             "REGION": data.reg,
             "DEPARTAMENTO": data.dep,
             "CLINICA/HOSPITAL": data.cli,
-            "CONTACTO": data.con,
-            "INSTALADOR": user,
-            "FECHA": new Date().toLocaleString()
+            "CONTACTO": data.con
         });
 
-        localStorage.setItem('inventario_permanente', JSON.stringify(db));
+        // Se guarda la lista completa en la memoria del dispositivo
+        localStorage.setItem('inventario_master_db', JSON.stringify(db));
 
-        // Limpiar campos
+        // Limpieza de campos
         [prefix + '_no', prefix + '_dep', prefix + '_reg', prefix + '_cli', prefix + '_con'].forEach(id => {
             document.getElementById(id).value = "";
         });
         if(type === 'Manual') document.getElementById('man_eq').selectedIndex = 0;
 
         document.getElementById('contador').innerText = db.length;
-        alert("✅ Registro guardado exitosamente.");
+        alert("✅ Guardado en el historial unificado.");
     }
 
     function exportExcel() {
-        if (db.length === 0) return alert("Sin datos.");
+        if (db.length === 0) return alert("No hay registros para exportar.");
+        
+        // Crea el Excel a partir de toda la base de datos acumulada
         const ws = XLSX.utils.json_to_sheet(db);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Inventario");
-        XLSX.writeFile(wb, "Reporte_Inventario.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, "Inventario_Total");
+        
+        // Nombre del archivo con la fecha de hoy
+        const fecha = new Date().toLocaleDateString().replace(/\//g, '-');
+        XLSX.writeFile(wb, `Inventario_General_GT_${fecha}.xlsx`);
     }
 </script>
 </body>
