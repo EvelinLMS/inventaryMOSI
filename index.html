@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventario Laboratorio GT - Cloud</title>
+    <title>Inventario Laboratorio GT - Persistent</title>
     
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -11,26 +11,20 @@
     <style>
         :root { --primary: #0284c7; --success: #16a34a; --bg: #f8fafc; --dark: #0f172a; --accent: #4f46e5; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-top: 60px; }
-        
         .status-bar { position: fixed; top: 0; left: 0; right: 0; height: 50px; background: var(--dark); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 1000; border-bottom: 2px solid var(--primary); }
-        
         nav { background: white; display: flex; justify-content: space-around; padding: 10px 0; border-bottom: 1px solid #e2e8f0; position: sticky; top: 50px; z-index: 900; }
         nav button { background: none; border: none; color: var(--dark); font-weight: 600; cursor: pointer; padding: 10px; font-size: 0.85rem; }
         nav button.active { color: var(--primary); border-bottom: 3px solid var(--primary); }
-
         .page { display: none; padding: 20px; max-width: 600px; margin: auto; }
         .page.active { display: block; }
-
         .card { background: white; padding: 25px; border-radius: 15px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        
         label { display: block; font-size: 0.75rem; font-weight: 700; margin-top: 15px; color: #64748b; text-transform: uppercase; }
         input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
-        
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; margin-top: 10px; color: white; transition: 0.2s; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; margin-top: 10px; color: white; }
         .btn-save { background: var(--success); }
         .btn-cam { background: #334155; }
         .btn-excel { background: #1e293b; }
-
+        .btn-clear { background: #be123c; margin-top: 30px; font-size: 0.7rem; padding: 8px; }
         #reader { width: 100% !important; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 10px; }
         .loading { display: none; color: var(--primary); text-align: center; font-weight: bold; margin: 10px 0; }
     </style>
@@ -56,21 +50,13 @@
 
     <div id="opA" class="page">
         <div class="card">
-            <h2>📷 Escáner de Equipos</h2>
+            <h2>📷 Escáner QR</h2>
             <div id="reader"></div>
-            <button class="btn btn-cam" id="btnCam" onclick="startCamera()">Activar Cámara</button>
-            
+            <button class="btn btn-cam" onclick="startCamera()">Activar Cámara</button>
             <label>Equipo:</label>
-            <select id="qr_eq">
-                <option value="">-- Seleccionar --</option>
-                <option>Hematologia</option><option>Química</option><option>Serologia</option><option>Coprologia</option>
-                <option>Microscopio</option><option>Centrífuga</option><option>Gases Arteriales</option><option>Electrolitos</option>
-                <option>Hemoglobina Clico</option><option>Camara fría</option><option>Horno Bacteriología</option><option>Campana de flujo</option>
-                <option>Aire acondicionado</option><option>Mezclador</option><option>Sellador de bolsas</option>
-            </select>
-
-            <label>Serie Detectada:</label>
-            <input type="text" id="qr_serie" readonly placeholder="Escanee un código...">
+            <select id="qr_eq"><option value="">-- Seleccionar --</option><option>Hematologia</option><option>Química</option><option>Serologia</option><option>Coprologia</option><option>Microscopio</option><option>Centrífuga</option><option>Gases Arteriales</option><option>Electrolitos</option><option>Hemoglobina Clico</option><option>Camara fría</option><option>Horno Bacteriología</option><option>Campana de flujo</option><option>Aire acondicionado</option><option>Mezclador</option><option>Sellador de bolsas</option></select>
+            <label>Serie:</label>
+            <input type="text" id="qr_serie" readonly>
             <label>Departamento:</label>
             <select id="qr_dep" onchange="setReg('qr')"></select>
             <label>Región:</label>
@@ -79,23 +65,16 @@
             <input type="text" id="qr_cli">
             <label>Contacto:</label>
             <input type="text" id="qr_con">
-
-            <div id="load-qr" class="loading">Sincronizando con Excel...</div>
-            <button id="btn-qr" class="btn btn-save" onclick="sendToCloud('qr')">GUARDAR REGISTRO QR</button>
+            <div id="load-qr" class="loading">Sincronizando...</div>
+            <button id="btn-qr" class="btn btn-save" onclick="sendToCloud('qr')">GUARDAR EN LA NUBE</button>
         </div>
     </div>
 
     <div id="opB" class="page">
         <div class="card">
-            <h2>✍️ Ingreso Manual</h2>
+            <h2>✍️ Registro Manual</h2>
             <label>Equipo:</label>
-            <select id="man_eq">
-                <option value="">-- Seleccionar --</option>
-                <option>Hematologia</option><option>Química</option><option>Serologia</option><option>Coprologia</option>
-                <option>Microscopio</option><option>Centrífuga</option><option>Gases Arteriales</option><option>Electrolitos</option>
-                <option>Hemoglobina Clico</option><option>Camara fría</option><option>Horno Bacteriología</option><option>Campana de flujo</option>
-                <option>Aire acondicionado</option><option>Mezclador</option><option>Sellador de bolsas</option>
-            </select>
+            <select id="man_eq"><option value="">-- Seleccionar --</option><option>Hematologia</option><option>Química</option><option>Serologia</option><option>Coprologia</option><option>Microscopio</option><option>Centrífuga</option><option>Gases Arteriales</option><option>Electrolitos</option><option>Hemoglobina Clico</option><option>Camara fría</option><option>Horno Bacteriología</option><option>Campana de flujo</option><option>Aire acondicionado</option><option>Mezclador</option><option>Sellador de bolsas</option></select>
             <label>No. de Serie:</label>
             <input type="text" id="man_serie">
             <label>Departamento:</label>
@@ -106,27 +85,28 @@
             <input type="text" id="man_cli">
             <label>Contacto:</label>
             <input type="text" id="man_con">
-
-            <div id="load-man" class="loading">Sincronizando con Excel...</div>
-            <button id="btn-man" class="btn btn-save" onclick="sendToCloud('man')">GUARDAR REGISTRO MANUAL</button>
+            <div id="load-man" class="loading">Sincronizando...</div>
+            <button id="btn-man" class="btn btn-save" onclick="sendToCloud('man')">GUARDAR EN LA NUBE</button>
         </div>
     </div>
 
     <div id="historial" class="page">
         <div class="card" style="text-align: center;">
-            <h2>Resumen de Sesión</h2>
-            <p>Registros en este dispositivo:</p>
+            <h2>Resumen Histórico</h2>
+            <p>Registros guardados en este dispositivo:</p>
             <b id="counter" style="font-size: 3rem; color: var(--primary);">0</b>
             <hr>
-            <button class="btn btn-excel" onclick="exportEx()">📥 DESCARGAR EXCEL LOCAL</button>
+            <button class="btn btn-excel" onclick="exportEx()">📥 DESCARGAR EXCEL COMPLETO</button>
+            <button class="btn btn-clear" onclick="clearLocalData()">🗑️ BORRAR MEMORIA LOCAL</button>
+            <p style="font-size: 0.6rem; color: gray; margin-top: 10px;">El borrado local no afecta a Google Sheets.</p>
         </div>
     </div>
 
 <script>
-    // URL DE TU ÚLTIMA IMPLEMENTACIÓN
-    const CLOUD_URL = "https://script.google.com/macros/s/AKfycbwXCT1FRS8RECU48dSSyXoULEuwoJsdJBhnYAPKAwcgam7Zxmm7UtG_PiXYgg6SOrO7/exec";
+    const CLOUD_URL = "https://script.google.com/macros/s/AKfycbz7T7-zqrIWtc94XnRkl-QyzLzXqiX65MzdfD7eeqm8j_4liCfT1Q4wlYTak9dx2rek/exec";
 
-    let sessionData = [];
+    // CARGAR DATOS PERSISTENTES AL INICIAR
+    let sessionData = JSON.parse(localStorage.getItem('savedRecords')) || [];
     let scanner = null;
     const geoMap = { "Guatemala": "I", "Alta Verapaz": "II", "Baja Verapaz": "II", "Chiquimula": "III", "El Progreso": "III", "Izabal": "III", "Zacapa": "III", "Jalapa": "IV", "Jutiapa": "IV", "Santa Rosa": "IV", "Chimaltenango": "V", "Escuintla": "V", "Sacatepéquez": "V", "Quetzaltenango": "VI", "Retalhuleu": "VI", "San Marcos": "VI", "Suchitepéquez": "VI", "Sololá": "VI", "Totonicapán": "VI", "Huehuetenango": "VII", "Quiché": "VII", "Petén": "VIII" };
 
@@ -137,6 +117,7 @@
             Object.keys(geoMap).sort().forEach(d => { sel.innerHTML += `<option value="${d}">${d}</option>`; });
         });
         document.getElementById('userInput').value = localStorage.getItem('techName') || "";
+        document.getElementById('counter').innerText = sessionData.length;
         updateUser();
     };
 
@@ -164,12 +145,12 @@
         scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (t) => {
             document.getElementById('qr_serie').value = t;
             scanner.stop();
-        }).catch(err => alert("Cámara bloqueada o no disponible."));
+        }).catch(err => alert("Error de cámara."));
     }
 
     async function sendToCloud(prefix) {
         const user = localStorage.getItem('techName');
-        if(!user) return alert("❌ Primero ingresa tu nombre en CONFIG.");
+        if(!user) return alert("Ingrese técnico.");
 
         const payload = {
             fecha: new Date().toLocaleString(),
@@ -182,33 +163,43 @@
             con: document.getElementById(prefix + '_con').value
         };
 
-        if(!payload.serie || !payload.eq || !payload.dep || !payload.cli) return alert("❌ Llena los campos obligatorios (Equipo, Serie, Depto, Unidad).");
+        if(!payload.serie || !payload.eq) return alert("Faltan datos.");
 
         document.getElementById('load-'+prefix).style.display = 'block';
-        document.getElementById('btn-'+prefix).disabled = true;
 
         try {
             await fetch(CLOUD_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
-            sessionData.push(payload);
-            document.getElementById('counter').innerText = sessionData.length;
             
-            alert("✅ GUARDADO EXITOSO EN LA NUBE");
+            // GUARDAR LOCALMENTE Y PERSISTIR
+            sessionData.push(payload);
+            localStorage.setItem('savedRecords', JSON.stringify(sessionData));
+            
+            document.getElementById('counter').innerText = sessionData.length;
+            alert("✅ GUARDADO");
+            
             document.getElementById(prefix + '_serie').value = "";
             document.getElementById(prefix + '_cli').value = "";
         } catch (e) {
-            alert("❌ Error de conexión. Se intentará guardar localmente.");
+            alert("Error de red.");
         } finally {
             document.getElementById('load-'+prefix).style.display = 'none';
-            document.getElementById('btn-'+prefix).disabled = false;
         }
     }
 
     function exportEx() {
-        if(sessionData.length === 0) return alert("No hay datos para exportar.");
+        if(sessionData.length === 0) return alert("Sin datos.");
         const ws = XLSX.utils.json_to_sheet(sessionData);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Reporte");
-        XLSX.writeFile(wb, "Inventario_Laboratorio.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, "Inventario");
+        XLSX.writeFile(wb, "Inventario_Historial.xlsx");
+    }
+
+    function clearLocalData() {
+        if(confirm("¿Borrar historial de este dispositivo? (No borra Google Sheets)")) {
+            sessionData = [];
+            localStorage.removeItem('savedRecords');
+            document.getElementById('counter').innerText = "0";
+        }
     }
 </script>
 </body>

@@ -3,139 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventario Laboratorio GT</title>
+    <title>Inventario Laboratorio GT - Persistent</title>
+    
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
     <style>
-        :root { --primary: #0284c7; --success: #16a34a; --bg: #f8fafc; --dark: #0f172a; }
+        :root { --primary: #0284c7; --success: #16a34a; --bg: #f8fafc; --dark: #0f172a; --accent: #4f46e5; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-top: 60px; }
         .status-bar { position: fixed; top: 0; left: 0; right: 0; height: 50px; background: var(--dark); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 1000; border-bottom: 2px solid var(--primary); }
         nav { background: white; display: flex; justify-content: space-around; padding: 10px 0; border-bottom: 1px solid #e2e8f0; position: sticky; top: 50px; z-index: 900; }
-        nav button { background: none; border: none; color: var(--dark); font-weight: 600; cursor: pointer; padding: 10px; font-size: 0.8rem; }
+        nav button { background: none; border: none; color: var(--dark); font-weight: 600; cursor: pointer; padding: 10px; font-size: 0.85rem; }
         nav button.active { color: var(--primary); border-bottom: 3px solid var(--primary); }
         .page { display: none; padding: 20px; max-width: 600px; margin: auto; }
         .page.active { display: block; }
-        .card { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        label { display: block; font-size: 0.7rem; font-weight: 700; margin-top: 12px; color: #64748b; text-transform: uppercase; }
-        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; margin-top: 15px; color: white; }
+        .card { background: white; padding: 25px; border-radius: 15px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        label { display: block; font-size: 0.75rem; font-weight: 700; margin-top: 15px; color: #64748b; text-transform: uppercase; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; margin-top: 10px; color: white; }
         .btn-save { background: var(--success); }
         .btn-cam { background: #334155; }
         .btn-excel { background: #1e293b; }
-        #reader { width: 100% !important; border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+        .btn-clear { background: #be123c; margin-top: 30px; font-size: 0.7rem; padding: 8px; }
+        #reader { width: 100% !important; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 10px; }
         .loading { display: none; color: var(--primary); text-align: center; font-weight: bold; margin: 10px 0; }
     </style>
 </head>
 <body>
 
-<div class="status-bar">👤 TÉCNICO: <span id="displayName" style="margin-left:8px; color:#38bdf8;">---</span></div>
+    <div class="status-bar">👤 TÉCNICO: <span id="displayName" style="margin-left:10px; color:#38bdf8;">---</span></div>
 
-<nav>
-    <button onclick="showPage('inicio')" id="tab-inicio">CONFIG</button>
-    <button onclick="showPage('opA')" id="tab-opA">QR</button>
-    <button onclick="showPage('opB')" id="tab-opB">MANUAL</button>
-    <button onclick="showPage('historial')" id="tab-historial">DATOS</button>
-</nav>
+    <nav>
+        <button onclick="showPage('inicio')" id="tab-inicio">CONFIG</button>
+        <button onclick="showPage('opA')" id="tab-opA">ESCÁNER QR</button>
+        <button onclick="showPage('opB')" id="tab-opB">MANUAL</button>
+        <button onclick="showPage('historial')" id="tab-historial">DATOS</button>
+    </nav>
 
-<div id="inicio" class="page active">
-    <div class="card">
-        <h2>Configuración</h2>
-        <label>Nombre del Técnico:</label>
-        <input type="text" id="userInput" placeholder="Escriba su nombre..." oninput="saveUser()">
+    <div id="inicio" class="page active">
+        <div class="card">
+            <h2>Configuración</h2>
+            <label>Nombre del Técnico:</label>
+            <input type="text" id="userInput" placeholder="Escriba su nombre..." oninput="updateUser()">
+        </div>
     </div>
-</div>
 
-<div id="opA" class="page">
-    <div class="card">
-        <h2>Escáner QR</h2>
-        <div id="reader"></div>
-        <button class="btn btn-cam" onclick="startCamera()">Activar Cámara</button>
-        <label>Equipo:</label>
-        <select id="qr_eq">
-            <option value="">-- Seleccionar --</option>
-            <option>Hematologia</option><option>Química</option><option>Serologia</option><option>Coprologia</option>
-            <option>Microscopio</option><option>Centrífuga</option><option>Gases Arteriales</option>
-            <option>Electrolitos</option><option>Hemoglobina Clico</option><option>Camara fría</option>
-            <option>Horno Bacteriología</option><option>Campana de flujo</option><option>Aire acondicionado</option>
-            <option>Mezclador</option><option>Sellador de bolsas</option>
-        </select>
-        <label>Serie:</label>
-        <input type="text" id="qr_serie" readonly>
-        <label>Departamento:</label>
-        <select id="qr_dep" onchange="setReg('qr')"></select>
-        <label>Región:</label>
-        <input type="text" id="qr_reg" readonly>
-        <label>Unidad Médica:</label>
-        <input type="text" id="qr_cli">
-        <label>Contacto:</label>
-        <input type="text" id="qr_con">
-        <div id="load-qr" class="loading">Enviando a la nube...</div>
-        <button id="btn-qr" class="btn btn-save" onclick="sendData('qr')">GUARDAR EN LA NUBE</button>
+    <div id="opA" class="page">
+        <div class="card">
+            <h2>📷 Escáner QR</h2>
+            <div id="reader"></div>
+            <button class="btn btn-cam" onclick="startCamera()">Activar Cámara</button>
+            <label>Equipo:</label>
+            <select id="qr_eq"><option value="">-- Seleccionar --</option><option>Hematologia</option><option>Química</option><option>Serologia</option><option>Coprologia</option><option>Microscopio</option><option>Centrífuga</option><option>Gases Arteriales</option><option>Electrolitos</option><option>Hemoglobina Clico</option><option>Camara fría</option><option>Horno Bacteriología</option><option>Campana de flujo</option><option>Aire acondicionado</option><option>Mezclador</option><option>Sellador de bolsas</option></select>
+            <label>Serie:</label>
+            <input type="text" id="qr_serie" readonly>
+            <label>Departamento:</label>
+            <select id="qr_dep" onchange="setReg('qr')"></select>
+            <label>Región:</label>
+            <input type="text" id="qr_reg" readonly>
+            <label>Unidad Médica:</label>
+            <input type="text" id="qr_cli">
+            <label>Contacto:</label>
+            <input type="text" id="qr_con">
+            <div id="load-qr" class="loading">Sincronizando...</div>
+            <button id="btn-qr" class="btn btn-save" onclick="sendToCloud('qr')">GUARDAR EN LA NUBE</button>
+        </div>
     </div>
-</div>
 
-<div id="opB" class="page">
-    <div class="card">
-        <h2>Ingreso Manual</h2>
-        <label>Equipo:</label>
-        <select id="man_eq">
-            <option value="">-- Seleccionar --</option>
-            <option>Hematologia</option><option>Química</option><option>Serologia</option><option>Coprologia</option>
-            <option>Microscopio</option><option>Centrífuga</option><option>Gases Arteriales</option>
-            <option>Electrolitos</option><option>Hemoglobina Clico</option><option>Camara fría</option>
-            <option>Horno Bacteriología</option><option>Campana de flujo</option><option>Aire acondicionado</option>
-            <option>Mezclador</option><option>Sellador de bolsas</option>
-        </select>
-        <label>Serie:</label>
-        <input type="text" id="man_serie">
-        <label>Departamento:</label>
-        <select id="man_dep" onchange="setReg('man')"></select>
-        <label>Región:</label>
-        <input type="text" id="man_reg" readonly>
-        <label>Unidad Médica:</label>
-        <input type="text" id="man_cli">
-        <label>Contacto:</label>
-        <input type="text" id="man_con">
-        <div id="load-man" class="loading">Enviando a la nube...</div>
-        <button id="btn-man" class="btn btn-save" onclick="sendData('man')">GUARDAR EN LA NUBE</button>
+    <div id="opB" class="page">
+        <div class="card">
+            <h2>✍️ Registro Manual</h2>
+            <label>Equipo:</label>
+            <select id="man_eq"><option value="">-- Seleccionar --</option><option>Hematologia</option><option>Química</option><option>Serologia</option><option>Coprologia</option><option>Microscopio</option><option>Centrífuga</option><option>Gases Arteriales</option><option>Electrolitos</option><option>Hemoglobina Clico</option><option>Camara fría</option><option>Horno Bacteriología</option><option>Campana de flujo</option><option>Aire acondicionado</option><option>Mezclador</option><option>Sellador de bolsas</option></select>
+            <label>No. de Serie:</label>
+            <input type="text" id="man_serie">
+            <label>Departamento:</label>
+            <select id="man_dep" onchange="setReg('man')"></select>
+            <label>Región:</label>
+            <input type="text" id="man_reg" readonly>
+            <label>Unidad Médica:</label>
+            <input type="text" id="man_cli">
+            <label>Contacto:</label>
+            <input type="text" id="man_con">
+            <div id="load-man" class="loading">Sincronizando...</div>
+            <button id="btn-man" class="btn btn-save" onclick="sendToCloud('man')">GUARDAR EN LA NUBE</button>
+        </div>
     </div>
-</div>
 
-<div id="historial" class="page">
-    <div class="card" style="text-align: center;">
-        <h2>Sesión Actual</h2>
-        <p>Registros enviados:</p>
-        <b id="count" style="font-size: 3rem; color: var(--primary);">0</b>
-        <button class="btn btn-excel" onclick="downloadEx()">📥 DESCARGAR EXCEL</button>
+    <div id="historial" class="page">
+        <div class="card" style="text-align: center;">
+            <h2>Resumen Histórico</h2>
+            <p>Registros guardados en este dispositivo:</p>
+            <b id="counter" style="font-size: 3rem; color: var(--primary);">0</b>
+            <hr>
+            <button class="btn btn-excel" onclick="exportEx()">📥 DESCARGAR EXCEL COMPLETO</button>
+            <button class="btn btn-clear" onclick="clearLocalData()">🗑️ BORRAR MEMORIA LOCAL</button>
+            <p style="font-size: 0.6rem; color: gray; margin-top: 10px;">El borrado local no afecta a Google Sheets.</p>
+        </div>
     </div>
-</div>
 
 <script>
-    const CLOUD_URL = "https://script.google.com/macros/s/AKfycbwXCT1FRS8RECU48dSSyXoULEuwoJsdJBhnYAPKAwcgam7Zxmm7UtG_PiXYgg6SOrO7/exec";
-    
-    let localDB = [];
+    const CLOUD_URL = "https://script.google.com/macros/s/AKfycbz7T7-zqrIWtc94XnRkl-QyzLzXqiX65MzdfD7eeqm8j_4liCfT1Q4wlYTak9dx2rek/exec";
+
+    // CARGAR DATOS PERSISTENTES AL INICIAR
+    let sessionData = JSON.parse(localStorage.getItem('savedRecords')) || [];
     let scanner = null;
-    const geo = { "Guatemala": "I", "Alta Verapaz": "II", "Baja Verapaz": "II", "Chiquimula": "III", "El Progreso": "III", "Izabal": "III", "Zacapa": "III", "Jalapa": "IV", "Jutiapa": "IV", "Santa Rosa": "IV", "Chimaltenango": "V", "Escuintla": "V", "Sacatepéquez": "V", "Quetzaltenango": "VI", "Retalhuleu": "VI", "San Marcos": "VI", "Suchitepéquez": "VI", "Sololá": "VI", "Totonicapán": "VI", "Huehuetenango": "VII", "Quiché": "VII", "Petén": "VIII" };
+    const geoMap = { "Guatemala": "I", "Alta Verapaz": "II", "Baja Verapaz": "II", "Chiquimula": "III", "El Progreso": "III", "Izabal": "III", "Zacapa": "III", "Jalapa": "IV", "Jutiapa": "IV", "Santa Rosa": "IV", "Chimaltenango": "V", "Escuintla": "V", "Sacatepéquez": "V", "Quetzaltenango": "VI", "Retalhuleu": "VI", "San Marcos": "VI", "Suchitepéquez": "VI", "Sololá": "VI", "Totonicapán": "VI", "Huehuetenango": "VII", "Quiché": "VII", "Petén": "VIII" };
 
     window.onload = () => {
-        const selects = [document.getElementById('qr_dep'), document.getElementById('man_dep')];
-        selects.forEach(s => {
-            s.innerHTML = '<option value="">-- Seleccione --</option>';
-            Object.keys(geo).sort().forEach(d => { s.innerHTML += `<option value="${d}">${d}</option>`; });
+        const deps = [document.getElementById('qr_dep'), document.getElementById('man_dep')];
+        deps.forEach(sel => {
+            sel.innerHTML = '<option value="">-- Seleccione Depto --</option>';
+            Object.keys(geoMap).sort().forEach(d => { sel.innerHTML += `<option value="${d}">${d}</option>`; });
         });
-        document.getElementById('userInput').value = localStorage.getItem('tech') || "";
-        saveUser();
+        document.getElementById('userInput').value = localStorage.getItem('techName') || "";
+        document.getElementById('counter').innerText = sessionData.length;
+        updateUser();
     };
 
-    function saveUser() {
+    function updateUser() {
         const u = document.getElementById('userInput').value;
         document.getElementById('displayName').innerText = u.toUpperCase() || "---";
-        localStorage.setItem('tech', u);
+        localStorage.setItem('techName', u);
     }
 
     function setReg(p) {
         const d = document.getElementById(p + '_dep').value;
-        document.getElementById(p + '_reg').value = d ? "Región " + geo[d] : "";
+        document.getElementById(p + '_reg').value = d ? "Región " + geoMap[d] : "";
     }
 
     function showPage(id) {
@@ -143,56 +137,69 @@
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         document.getElementById('tab-'+id).classList.add('active');
-        if(id !== 'opA' && scanner) scanner.stop();
+        if(id !== 'opA' && scanner) { scanner.stop(); scanner = null; }
     }
 
     function startCamera() {
-        scanner = new Html5Qrcode("reader");
+        if(!scanner) scanner = new Html5Qrcode("reader");
         scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (t) => {
             document.getElementById('qr_serie').value = t;
             scanner.stop();
-        });
+        }).catch(err => alert("Error de cámara."));
     }
 
-    async function sendData(p) {
-        const user = localStorage.getItem('tech');
-        if(!user) return alert("Ingrese su nombre en CONFIG.");
-        
+    async function sendToCloud(prefix) {
+        const user = localStorage.getItem('techName');
+        if(!user) return alert("Ingrese técnico.");
+
         const payload = {
             fecha: new Date().toLocaleString(),
             user: user,
-            eq: document.getElementById(p + '_eq').value,
-            serie: document.getElementById(p + '_serie').value,
-            dep: document.getElementById(p + '_dep').value,
-            reg: document.getElementById(p + '_reg').value,
-            cli: document.getElementById(p + '_cli').value,
-            con: document.getElementById(p + '_con').value
+            eq: document.getElementById(prefix + '_eq').value,
+            serie: document.getElementById(prefix + '_serie').value,
+            dep: document.getElementById(prefix + '_dep').value,
+            reg: document.getElementById(prefix + '_reg').value,
+            cli: document.getElementById(prefix + '_cli').value,
+            con: document.getElementById(prefix + '_con').value
         };
 
-        if(!payload.serie || !payload.eq || !payload.dep) return alert("Complete los campos obligatorios.");
+        if(!payload.serie || !payload.eq) return alert("Faltan datos.");
 
-        document.getElementById('load-'+p).style.display = 'block';
-        
+        document.getElementById('load-'+prefix).style.display = 'block';
+
         try {
             await fetch(CLOUD_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
-            localDB.push(payload);
-            document.getElementById('count').innerText = localDB.length;
-            alert("✅ GUARDADO EN GOOGLE SHEETS");
-            document.getElementById(p + '_serie').value = "";
-            document.getElementById(p + '_cli').value = "";
+            
+            // GUARDAR LOCALMENTE Y PERSISTIR
+            sessionData.push(payload);
+            localStorage.setItem('savedRecords', JSON.stringify(sessionData));
+            
+            document.getElementById('counter').innerText = sessionData.length;
+            alert("✅ GUARDADO");
+            
+            document.getElementById(prefix + '_serie').value = "";
+            document.getElementById(prefix + '_cli').value = "";
         } catch (e) {
-            alert("❌ Error de red.");
+            alert("Error de red.");
         } finally {
-            document.getElementById('load-'+p).style.display = 'none';
+            document.getElementById('load-'+prefix).style.display = 'none';
         }
     }
 
-    function downloadEx() {
-        if(localDB.length === 0) return alert("No hay datos.");
-        const ws = XLSX.utils.json_to_sheet(localDB);
+    function exportEx() {
+        if(sessionData.length === 0) return alert("Sin datos.");
+        const ws = XLSX.utils.json_to_sheet(sessionData);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Inventario");
-        XLSX.writeFile(wb, "Inventario_GT.xlsx");
+        XLSX.writeFile(wb, "Inventario_Historial.xlsx");
+    }
+
+    function clearLocalData() {
+        if(confirm("¿Borrar historial de este dispositivo? (No borra Google Sheets)")) {
+            sessionData = [];
+            localStorage.removeItem('savedRecords');
+            document.getElementById('counter').innerText = "0";
+        }
     }
 </script>
 </body>
