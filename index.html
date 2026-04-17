@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventario Pro - Registro Protegido</title>
+    <title>Inventario Pro - Regiones GT</title>
     
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -70,10 +70,10 @@
 
     <div id="inicio" class="page active">
         <div class="card">
-            <h2>Configuración Inicial</h2>
+            <h2>Configuración</h2>
             <label>Nombre del Instalador:</label>
             <input type="text" id="inputInstalador" placeholder="Nombre completo..." oninput="updateInstalador()">
-            <p style="color: #16a34a; font-size: 0.8rem; font-weight: bold;">✅ AUTO-GUARDADO ACTIVADO: Los datos son permanentes.</p>
+            <p style="color: #16a34a; font-size: 0.8rem; font-weight: bold;">✅ BASE DE DATOS LOCAL ACTIVA</p>
         </div>
     </div>
 
@@ -90,7 +90,7 @@
             <input type="text" id="qr_reg" readonly>
             <label>Clínica / Hospital:</label>
             <input type="text" id="qr_cli">
-            <label>Contacto de Clínica:</label>
+            <label>Contacto:</label>
             <input type="text" id="qr_con">
             <button class="btn btn-qr" onclick="saveData('QR')">Guardar Registro</button>
         </div>
@@ -112,7 +112,7 @@
             <input type="text" id="man_reg" readonly>
             <label>Clínica / Hospital:</label>
             <input type="text" id="man_cli">
-            <label>Contacto de Clínica:</label>
+            <label>Contacto:</label>
             <input type="text" id="man_con">
             <button class="btn btn-manual" onclick="saveData('Manual')">Guardar Registro</button>
         </div>
@@ -123,36 +123,54 @@
             <h2>📋 Registros en Memoria</h2>
             <p>Conteo actual: <b id="contador">0</b></p>
             <button class="btn btn-excel" onclick="exportExcel()">📊 Exportar a Excel</button>
-            <p style="color: #64748b; font-size: 0.75rem; margin-top: 20px;">ℹ️ El historial se mantiene guardado en este dispositivo.</p>
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+            <p style="color: #64748b; font-size: 0.75rem;">Los registros se almacenan permanentemente en este dispositivo.</p>
         </div>
     </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('inventario_db')) || []; 
+    let db = JSON.parse(localStorage.getItem('inventario_permanente')) || []; 
     let scanner = null;
 
+    // NUEVA ESTRUCTURA DE REGIONES SOLICITADA
     const geoData = {
-        "Guatemala": "Metro", "Sacatepéquez": "Central", "Chimaltenango": "Central",
-        "El Progreso": "Nororiente", "Escuintla": "Surcentral", "Santa Rosa": "Suroriente",
-        "Baja Verapaz": "Norte", "Alta Verapaz": "Norte", "Petén": "Petén",
-        "Izabal": "Nororiente", "Zacapa": "Nororiente", "Chiquimula": "Nororiente",
-        "Jutiapa": "Suroriente", "Jalapa": "Suroriente", "Sololá": "Occidente",
-        "Totonicapán": "Occidente", "Quetzaltenango": "Occidente", "Suchitepéquez": "Suroccidente",
-        "Retalhuleu": "Suroccidente", "San Marcos": "Suroccidente", "Huehuetenango": "Noroccidente",
-        "Quiché": "Noroccidente"
+        "Guatemala": "Región I / Metropolitana",
+        "Alta Verapaz": "Región II / Norte",
+        "Baja Verapaz": "Región II / Norte",
+        "Chiquimula": "Región III / Nororiente",
+        "El Progreso": "Región III / Nororiente",
+        "Izabal": "Región III / Nororiente",
+        "Zacapa": "Región III / Nororiente",
+        "Jutiapa": "Región IV / Suroriente",
+        "Jalapa": "Región IV / Suroriente",
+        "Santa Rosa": "Región IV / Suroriente",
+        "Chimaltenango": "Región V / Central",
+        "Escuintla": "Región V / Central",
+        "Sacatepéquez": "Región V / Central",
+        "Quetzaltenango": "Región VI / Suroccidente",
+        "Retalhuleu": "Región VI / Suroccidente",
+        "San Marcos": "Región VI / Suroccidente",
+        "Suchitepéquez": "Región VI / Suroccidente",
+        "Sololá": "Región VI / Suroccidente",
+        "Totonicapán": "Región VI / Suroccidente",
+        "Huehuetenango": "Región VII / Noroccidente",
+        "Quiché": "Región VII / Noroccidente",
+        "Petén": "Región VIII / Petén"
     };
 
     window.onload = () => {
         const selects = [document.getElementById('qr_dep'), document.getElementById('man_dep')];
+        const depsSorted = Object.keys(geoData).sort();
+        
         selects.forEach(sel => {
-            Object.keys(geoData).forEach(dep => {
+            depsSorted.forEach(dep => {
                 let opt = document.createElement('option');
                 opt.value = dep; opt.innerHTML = dep;
                 sel.appendChild(opt);
             });
         });
 
-        const savedUser = localStorage.getItem('instalador_activo');
+        const savedUser = localStorage.getItem('instalador_fijo');
         if(savedUser) {
             document.getElementById('inputInstalador').value = savedUser;
             updateInstalador();
@@ -168,7 +186,7 @@
     function updateInstalador() {
         const val = document.getElementById('inputInstalador').value;
         document.getElementById('displayInstalador').innerText = val.toUpperCase() || "NO ASIGNADO";
-        localStorage.setItem('instalador_activo', val);
+        localStorage.setItem('instalador_fijo', val);
     }
 
     function showPage(id) {
@@ -215,7 +233,7 @@
             "FECHA": new Date().toLocaleString()
         });
 
-        localStorage.setItem('inventario_db', JSON.stringify(db));
+        localStorage.setItem('inventario_permanente', JSON.stringify(db));
 
         // Limpiar campos
         [prefix + '_no', prefix + '_dep', prefix + '_reg', prefix + '_cli', prefix + '_con'].forEach(id => {
