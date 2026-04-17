@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventario Pro - Contacto Clínicas</title>
+    <title>Inventario Pro - Registro Protegido</title>
     
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -51,7 +51,6 @@
         .btn-manual { background: var(--accent); }
         .btn-cam { background: #334155; }
         .btn-excel { background: var(--success); }
-        .btn-clear { background: var(--danger); }
 
         #reader { width: 100% !important; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 10px; }
     </style>
@@ -74,7 +73,7 @@
             <h2>Configuración Inicial</h2>
             <label>Nombre del Instalador:</label>
             <input type="text" id="inputInstalador" placeholder="Nombre completo..." oninput="updateInstalador()">
-            <p style="color: #64748b; font-size: 0.8rem;">ℹ️ Los registros se borran al cerrar o recargar la página.</p>
+            <p style="color: #16a34a; font-size: 0.8rem; font-weight: bold;">✅ AUTO-GUARDADO ACTIVADO: Los datos son permanentes.</p>
         </div>
     </div>
 
@@ -83,25 +82,17 @@
             <h2>📷 Registro QR</h2>
             <div id="reader"></div>
             <button class="btn btn-cam" id="btnCam" onclick="startCamera()">Activar Cámara</button>
-            
             <label>No. de Serie:</label>
             <input type="text" id="qr_no" readonly>
-
             <label>Departamento:</label>
-            <select id="qr_dep" onchange="autoReg('qr')">
-                <option value="">Seleccione Departamento...</option>
-            </select>
-
+            <select id="qr_dep" onchange="autoReg('qr')"><option value="">Seleccione...</option></select>
             <label>Región (Auto):</label>
             <input type="text" id="qr_reg" readonly>
-
             <label>Clínica / Hospital:</label>
-            <input type="text" id="qr_cli" placeholder="Nombre de la unidad">
-
+            <input type="text" id="qr_cli">
             <label>Contacto de Clínica:</label>
-            <input type="text" id="qr_con" placeholder="Nombre o Teléfono del contacto">
-            
-            <button class="btn btn-qr" onclick="saveData('QR')">Guardar y Limpiar</button>
+            <input type="text" id="qr_con">
+            <button class="btn btn-qr" onclick="saveData('QR')">Guardar Registro</button>
         </div>
     </div>
 
@@ -113,25 +104,17 @@
                 <option value="">-- Seleccionar --</option>
                 <option>Computadora</option><option>Monitor</option><option>Teclado</option>
             </select>
-
             <label>No. de Serie:</label>
             <input type="text" id="man_no">
-
             <label>Departamento:</label>
-            <select id="man_dep" onchange="autoReg('man')">
-                <option value="">Seleccione Departamento...</option>
-            </select>
-
+            <select id="man_dep" onchange="autoReg('man')"><option value="">Seleccione...</option></select>
             <label>Región (Auto):</label>
             <input type="text" id="man_reg" readonly>
-
             <label>Clínica / Hospital:</label>
-            <input type="text" id="man_cli" placeholder="Nombre de la unidad">
-
+            <input type="text" id="man_cli">
             <label>Contacto de Clínica:</label>
-            <input type="text" id="man_con" placeholder="Nombre o Teléfono del contacto">
-            
-            <button class="btn btn-manual" onclick="saveData('Manual')">Guardar y Limpiar</button>
+            <input type="text" id="man_con">
+            <button class="btn btn-manual" onclick="saveData('Manual')">Guardar Registro</button>
         </div>
     </div>
 
@@ -140,12 +123,12 @@
             <h2>📋 Registros en Memoria</h2>
             <p>Conteo actual: <b id="contador">0</b></p>
             <button class="btn btn-excel" onclick="exportExcel()">📊 Exportar a Excel</button>
-            <button class="btn btn-clear" onclick="clearData()">🗑️ Limpiar Memoria</button>
+            <p style="color: #64748b; font-size: 0.75rem; margin-top: 20px;">ℹ️ El historial se mantiene guardado en este dispositivo.</p>
         </div>
     </div>
 
 <script>
-    let db = []; 
+    let db = JSON.parse(localStorage.getItem('inventario_db')) || []; 
     let scanner = null;
 
     const geoData = {
@@ -168,6 +151,13 @@
                 sel.appendChild(opt);
             });
         });
+
+        const savedUser = localStorage.getItem('instalador_activo');
+        if(savedUser) {
+            document.getElementById('inputInstalador').value = savedUser;
+            updateInstalador();
+        }
+        document.getElementById('contador').innerText = db.length;
     };
 
     function autoReg(prefix) {
@@ -178,6 +168,7 @@
     function updateInstalador() {
         const val = document.getElementById('inputInstalador').value;
         document.getElementById('displayInstalador').innerText = val.toUpperCase() || "NO ASIGNADO";
+        localStorage.setItem('instalador_activo', val);
     }
 
     function showPage(id) {
@@ -206,7 +197,7 @@
             dep: document.getElementById(prefix + '_dep').value,
             reg: document.getElementById(prefix + '_reg').value,
             cli: document.getElementById(prefix + '_cli').value,
-            con: document.getElementById(prefix + '_con').value, // NUEVO CAMPO
+            con: document.getElementById(prefix + '_con').value,
             eq: type === 'Manual' ? document.getElementById('man_eq').value : 'ESCANEADO QR'
         };
 
@@ -220,19 +211,20 @@
             "DEPARTAMENTO": data.dep,
             "CLINICA/HOSPITAL": data.cli,
             "CONTACTO": data.con,
-            "INSTALADOR": user
+            "INSTALADOR": user,
+            "FECHA": new Date().toLocaleString()
         });
 
-        // LIMPIEZA AUTOMÁTICA
-        document.getElementById(prefix + '_no').value = "";
-        document.getElementById(prefix + '_dep').value = "";
-        document.getElementById(prefix + '_reg').value = "";
-        document.getElementById(prefix + '_cli').value = "";
-        document.getElementById(prefix + '_con').value = "";
+        localStorage.setItem('inventario_db', JSON.stringify(db));
+
+        // Limpiar campos
+        [prefix + '_no', prefix + '_dep', prefix + '_reg', prefix + '_cli', prefix + '_con'].forEach(id => {
+            document.getElementById(id).value = "";
+        });
         if(type === 'Manual') document.getElementById('man_eq').selectedIndex = 0;
 
         document.getElementById('contador').innerText = db.length;
-        alert("✅ Guardado con éxito.");
+        alert("✅ Registro guardado exitosamente.");
     }
 
     function exportExcel() {
@@ -241,10 +233,6 @@
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Inventario");
         XLSX.writeFile(wb, "Reporte_Inventario.xlsx");
-    }
-
-    function clearData() {
-        if(confirm("¿Borrar todo el historial?")) { db = []; document.getElementById('contador').innerText = "0"; }
     }
 </script>
 </body>
