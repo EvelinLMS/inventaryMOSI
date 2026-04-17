@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventario Consolidado - Guatemala</title>
+    <title>Inventario Laboratorio Cloud - GT</title>
     
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
         :root {
@@ -46,15 +45,13 @@
         input[readonly] { background-color: #f1f5f9; color: var(--primary); font-weight: bold; }
 
         .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; margin-top: 10px; color: white; transition: 0.2s; }
-        .btn-qr { background: var(--primary); }
+        .btn-save { background: var(--success); }
         .btn-manual { background: var(--accent); }
         .btn-cam { background: #334155; }
-        .btn-excel { background: var(--success); }
 
         #reader { width: 100% !important; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 10px; }
         
-        .counter-box { text-align: center; margin-bottom: 20px; }
-        .counter-box b { font-size: 2rem; color: var(--primary); }
+        .loading-overlay { display: none; color: var(--primary); font-weight: bold; text-align: center; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -65,19 +62,19 @@
 
     <nav>
         <button onclick="showPage('inicio')" id="tab-inicio">Inicio</button>
-        <button onclick="showPage('opcionA')" id="tab-opcionA">QR</button>
+        <button onclick="showPage('opcionA')" id="tab-opcionA">Escáner QR</button>
         <button onclick="showPage('opcionB')" id="tab-opcionB">Manual</button>
         <button onclick="showPage('historial')" id="tab-historial">Base de Datos</button>
     </nav>
 
     <div id="inicio" class="page active">
         <div class="card">
-            <h2>Configuración del Técnico</h2>
+            <h2>Configuración</h2>
             <label>Nombre del Instalador:</label>
-            <input type="text" id="inputInstalador" placeholder="Escriba su nombre..." oninput="updateInstalador()">
-            <div style="background: #f0fdf4; padding: 15px; border-radius: 10px; border: 1px solid #bbf7d0; margin-top: 20px;">
-                <p style="color: #16a34a; margin: 0; font-size: 0.9rem;">
-                    <strong>💾 Memoria Unificada:</strong> Todos los registros se guardan en este dispositivo y se exportan en un solo archivo Excel consolidado.
+            <input type="text" id="inputInstalador" placeholder="Nombre completo..." oninput="updateInstalador()">
+            <div style="background: #e0f2fe; padding: 15px; border-radius: 10px; margin-top: 20px; border-left: 5px solid var(--primary);">
+                <p style="margin: 0; font-size: 0.85rem; color: #0369a1;">
+                    <strong>☁️ Conexión Establecida:</strong> Los datos se enviarán a Google Sheets de forma global.
                 </p>
             </div>
         </div>
@@ -85,63 +82,76 @@
 
     <div id="opcionA" class="page">
         <div class="card">
-            <h2>📷 Escáner de Equipos</h2>
+            <h2>📷 Registro QR</h2>
             <div id="reader"></div>
             <button class="btn btn-cam" id="btnCam" onclick="startCamera()">Activar Cámara</button>
-            <label>Serie:</label>
-            <input type="text" id="qr_no" readonly>
+            <label>No. de Serie:</label>
+            <input type="text" id="qr_no" readonly placeholder="Escanee un código...">
+            
+            <label>Equipo:</label>
+            <select id="qr_eq">
+                <option value="EQUIPO QR">-- Seleccionar Equipo --</option>
+                <option>Hematologia</option><option>Química</option><option>Serologia</option>
+                <option>Coprologia</option><option>Microscopio</option><option>Centrífuga</option>
+                <option>Gases Arteriales</option><option>Electrolitos</option><option>Hemoglobina Clico</option>
+                <option>Camara fría</option><option>Horno Bacteriología</option><option>Campana de flujo</option>
+                <option>Aire acondicionado</option><option>Mezclador</option><option>Sellador de bolsas</option>
+            </select>
+
             <label>Departamento:</label>
             <select id="qr_dep" onchange="autoReg('qr')"><option value="">Seleccione...</option></select>
             <label>Región:</label>
             <input type="text" id="qr_reg" readonly>
-            <label>Unidad Médica:</label>
+            <label>Clínica / Hospital:</label>
             <input type="text" id="qr_cli">
-            <label>Nombre Contacto:</label>
+            <label>Contacto:</label>
             <input type="text" id="qr_con">
-            <button class="btn btn-qr" onclick="saveData('QR')">Guardar en Base de Datos</button>
+            
+            <div id="loading-qr" class="loading-overlay">Subiendo a Google Sheets...</div>
+            <button id="btn-save-qr" class="btn btn-save" onclick="saveData('QR')">Guardar en la Nube</button>
         </div>
     </div>
 
     <div id="opcionB" class="page">
         <div class="card">
-            <h2>✍️ Ingreso Manual</h2>
-            <label>Tipo de Equipo:</label>
+            <h2>✍️ Registro Manual</h2>
+            <label>Equipo:</label>
             <select id="man_eq">
-                <option value="">-- Seleccionar --</option>
-                <option>Computadora</option><option>Monitor</option><option>Teclado</option>
+                <option value="">-- Seleccionar Equipo --</option>
+                <option>Hematologia</option><option>Química</option><option>Serologia</option>
+                <option>Coprologia</option><option>Microscopio</option><option>Centrífuga</option>
+                <option>Gases Arteriales</option><option>Electrolitos</option><option>Hemoglobina Clico</option>
+                <option>Camara fría</option><option>Horno Bacteriología</option><option>Campana de flujo</option>
+                <option>Aire acondicionado</option><option>Mezclador</option><option>Sellador de bolsas</option>
             </select>
-            <label>Serie:</label>
+            <label>No. de Serie:</label>
             <input type="text" id="man_no">
             <label>Departamento:</label>
             <select id="man_dep" onchange="autoReg('man')"><option value="">Seleccione...</option></select>
             <label>Región:</label>
             <input type="text" id="man_reg" readonly>
-            <label>Unidad Médica:</label>
+            <label>Clínica / Hospital:</label>
             <input type="text" id="man_cli">
-            <label>Nombre Contacto:</label>
+            <label>Contacto:</label>
             <input type="text" id="man_con">
-            <button class="btn btn-manual" onclick="saveData('Manual')">Guardar en Base de Datos</button>
+
+            <div id="loading-man" class="loading-overlay">Subiendo a Google Sheets...</div>
+            <button id="btn-save-man" class="btn btn-manual" onclick="saveData('Manual')">Guardar en la Nube</button>
         </div>
     </div>
 
     <div id="historial" class="page">
-        <div class="card">
-            <h2>📋 Base de Datos Acumulada</h2>
-            <div class="counter-box">
-                <p>Total de registros guardados:</p>
-                <b id="contador">0</b>
-            </div>
-            <button class="btn btn-excel" onclick="exportExcel()">📊 Descargar Excel Unificado</button>
-            <p style="color: #64748b; font-size: 0.75rem; text-align: center; margin-top: 20px;">
-                Nota: El archivo contendrá todos los registros capturados desde el inicio.
-            </p>
+        <div class="card" style="text-align: center;">
+            <h2>📊 Control de Registros</h2>
+            <p>Has enviado desde este teléfono:</p>
+            <b id="contador" style="font-size: 3rem; color: var(--primary);">0</b>
+            <p style="color: #64748b; font-size: 0.8rem;">Los datos están seguros en tu archivo maestro de Google Sheets.</p>
         </div>
     </div>
 
 <script>
-    // Se carga TODO lo guardado anteriormente al iniciar
-    let db = JSON.parse(localStorage.getItem('inventario_master_db')) || []; 
-    let scanner = null;
+    // URL OBTENIDA DE TU IMAGEN
+    const CLOUD_URL = "https://script.google.com/macros/s/AKfycbz7T7-zqrIWtc94XnRkl-QyzLzXqiX65MzdfD7eeqm8j_4liCfT1Q4wlYTak9dx2rek/exec"; 
 
     const geoData = {
         "Guatemala": "Región I / Metropolitana",
@@ -154,6 +164,9 @@
         "Petén": "Región VIII / Petén"
     };
 
+    let dbLocalCount = parseInt(localStorage.getItem('count_total')) || 0;
+    let scanner = null;
+
     window.onload = () => {
         const selects = [document.getElementById('qr_dep'), document.getElementById('man_dep')];
         Object.keys(geoData).sort().forEach(dep => {
@@ -164,13 +177,12 @@
             });
         });
 
-        // Cargar instalador guardado
-        const savedUser = localStorage.getItem('instalador_pref');
+        const savedUser = localStorage.getItem('instalador_nombre');
         if(savedUser) {
             document.getElementById('inputInstalador').value = savedUser;
             updateInstalador();
         }
-        document.getElementById('contador').innerText = db.length;
+        document.getElementById('contador').innerText = dbLocalCount;
     };
 
     function autoReg(prefix) {
@@ -181,7 +193,7 @@
     function updateInstalador() {
         const val = document.getElementById('inputInstalador').value;
         document.getElementById('displayInstalador').innerText = val.toUpperCase() || "NO ASIGNADO";
-        localStorage.setItem('instalador_pref', val);
+        localStorage.setItem('instalador_nombre', val);
     }
 
     function showPage(id) {
@@ -189,70 +201,69 @@
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         document.getElementById('tab-' + id).classList.add('active');
-        if (id !== 'opcionA' && scanner) scanner.stop();
+        if (id !== 'opcionA' && scanner) { scanner.stop(); document.getElementById('btnCam').style.display = 'block'; }
     }
 
     function startCamera() {
         if (!scanner) scanner = new Html5Qrcode("reader");
         scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
             document.getElementById('qr_no').value = text;
-        });
+            scanner.stop();
+            document.getElementById('btnCam').style.display = 'block';
+        }).catch(err => alert("Error de cámara: " + err));
         document.getElementById('btnCam').style.display = 'none';
     }
 
-    function saveData(type) {
+    async function saveData(type) {
         const user = document.getElementById('inputInstalador').value.trim();
-        if (!user) return alert("❌ Ingrese su nombre.");
+        if (!user) return alert("❌ Escribe tu nombre en la pestaña Inicio.");
 
         let prefix = type === 'QR' ? 'qr' : 'man';
-        const data = {
+        const payload = {
+            fecha: new Date().toLocaleString(),
+            user: user,
             serie: document.getElementById(prefix + '_no').value,
             dep: document.getElementById(prefix + '_dep').value,
             reg: document.getElementById(prefix + '_reg').value,
             cli: document.getElementById(prefix + '_cli').value,
             con: document.getElementById(prefix + '_con').value,
-            eq: type === 'Manual' ? document.getElementById('man_eq').value : 'EQUIPO QR'
+            eq: document.getElementById(prefix + '_eq').value
         };
 
-        if (Object.values(data).some(v => v.trim() === "")) return alert("❌ Complete todos los campos.");
-        if (db.some(r => r["SERIE"] === data.serie)) return alert("⚠️ Esta serie ya fue registrada.");
+        if (!payload.serie || !payload.dep || !payload.eq || !payload.cli) {
+            return alert("❌ Por favor completa Serie, Equipo, Departamento y Clínica.");
+        }
 
-        // Se agrega a la lista acumulativa
-        db.push({
-            "FECHA": new Date().toLocaleString(),
-            "INSTALADOR": user,
-            "EQUIPO": data.eq,
-            "SERIE": data.serie,
-            "REGION": data.reg,
-            "DEPARTAMENTO": data.dep,
-            "CLINICA/HOSPITAL": data.cli,
-            "CONTACTO": data.con
-        });
+        const btn = document.getElementById('btn-save-' + prefix);
+        const loader = document.getElementById('loading-' + prefix);
+        btn.disabled = true;
+        loader.style.display = 'block';
 
-        // Se guarda la lista completa en la memoria del dispositivo
-        localStorage.setItem('inventario_master_db', JSON.stringify(db));
+        try {
+            await fetch(CLOUD_URL, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify(payload)
+            });
 
-        // Limpieza de campos
-        [prefix + '_no', prefix + '_dep', prefix + '_reg', prefix + '_cli', prefix + '_con'].forEach(id => {
-            document.getElementById(id).value = "";
-        });
-        if(type === 'Manual') document.getElementById('man_eq').selectedIndex = 0;
+            dbLocalCount++;
+            localStorage.setItem('count_total', dbLocalCount);
+            document.getElementById('contador').innerText = dbLocalCount;
 
-        document.getElementById('contador').innerText = db.length;
-        alert("✅ Guardado en el historial unificado.");
-    }
+            alert("✅ REGISTRO ENVIADO A GOOGLE SHEETS");
+            
+            // Limpiar campos para el siguiente registro
+            document.getElementById(prefix + '_no').value = "";
+            document.getElementById(prefix + '_cli').value = "";
+            document.getElementById(prefix + '_con').value = "";
+            if(type === 'Manual') document.getElementById('man_eq').selectedIndex = 0;
 
-    function exportExcel() {
-        if (db.length === 0) return alert("No hay registros para exportar.");
-        
-        // Crea el Excel a partir de toda la base de datos acumulada
-        const ws = XLSX.utils.json_to_sheet(db);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Inventario_Total");
-        
-        // Nombre del archivo con la fecha de hoy
-        const fecha = new Date().toLocaleDateString().replace(/\//g, '-');
-        XLSX.writeFile(wb, `Inventario_General_GT_${fecha}.xlsx`);
+        } catch (error) {
+            alert("❌ Error de red. Revisa tu internet.");
+        } finally {
+            btn.disabled = false;
+            loader.style.display = 'none';
+        }
     }
 </script>
 </body>
